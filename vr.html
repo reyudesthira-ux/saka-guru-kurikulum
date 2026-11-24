@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pendopo VR · Saka Guru Kurikulum</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe.min.js"></script>
+<style>body{overflow:hidden}a-scene{position:fixed!important;inset:0;z-index:1}
+#top{position:fixed;top:0;left:0;right:0;z-index:5;padding:8px 12px;display:flex;justify-content:space-between}
+#panel{position:fixed;left:0;right:0;bottom:0;z-index:5;max-height:50vh;overflow-y:auto;background:var(--pn);border-top:2px solid var(--ln);border-radius:16px 16px 0 0;padding:12px 14px;max-width:760px;margin:auto}
+#cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.act{background:var(--ac);color:#fff}.sel{outline:2px solid var(--ac)}</style>
+</head>
+<body style="background:linear-gradient(#c9b99a,var(--bg))">
+<video id="cam" playsinline muted></video>
+<div id="top"><a class="btn" href="index.html">← Beranda</a><button id="ar">📷 Latar kamera</button></div>
+<a-scene vr-mode-ui="enabled:true" loading-screen="enabled:false">
+<a-light type="ambient" intensity="0.8"></a-light><a-light type="directional" position="3 6 4" intensity="0.9"></a-light>
+<a-entity position="0 0.2 -9" animation="property:rotation;to:0 360 0;dur:70000;loop:true;easing:linear">
+<a-box width="7" height="0.3" depth="7" position="0 0.15 0" color="#7c5a3a"></a-box>
+<a-box width="5" height="0.05" depth="5" position="0 0.33 0" color="#d6b98c"></a-box>
+<a-cylinder id="p0" class="clickable" radius="0.22" height="2.6" position="-1.8 1.6 -1.8"></a-cylinder>
+<a-cylinder id="p1" class="clickable" radius="0.22" height="2.6" position="1.8 1.6 -1.8"></a-cylinder>
+<a-cylinder id="p2" class="clickable" radius="0.22" height="2.6" position="1.8 1.6 1.8"></a-cylinder>
+<a-cylinder id="p3" class="clickable" radius="0.22" height="2.6" position="-1.8 1.6 1.8"></a-cylinder>
+<a-box width="4.2" height="0.2" depth="0.2" position="0 2.95 -1.8" color="#5b3f26"></a-box><a-box width="4.2" height="0.2" depth="0.2" position="0 2.95 1.8" color="#5b3f26"></a-box>
+<a-box width="0.2" height="0.2" depth="4.2" position="-1.8 2.95 0" color="#5b3f26"></a-box><a-box width="0.2" height="0.2" depth="4.2" position="1.8 2.95 0" color="#5b3f26"></a-box>
+<a-cone id="roof" radius-bottom="3.8" radius-top="0.5" height="1.6" segments-radial="4" position="0 3.9 0" rotation="0 45 0" color="#92400e"></a-cone>
+<a-sphere radius="0.28" position="0 4.9 0" color="#facc15"></a-sphere>
+</a-entity>
+<a-camera position="0 1.6 0" wasd-controls="enabled:false" cursor="rayOrigin:mouse" raycaster="objects:.clickable"></a-camera>
+</a-scene>
+<main id="panel"></main>
+<script src="kurikulum.js"></script>
+<script>
+const panel=$("panel");let mode=1,cur="k",sel=-1,seen=store.get("seen",{}),q=[],qi=0,s2=0;
+function paint(i,on,hl){const e=$("p"+i);e.setAttribute("material","color:"+(on?P[i].c:"#9ca3af")+";emissive:"+(hl?P[i].c:"#000")+";emissiveIntensity:"+(hl?.7:0));e.setAttribute("scale",hl?"1.3 1 1.3":"1 1 1")}
+const all=(on,hl)=>P.forEach((_,i)=>paint(i,on,hl===i));
+function roof(){$("roof").setAttribute("color",cur==="k"?"#92400e":"#0f766e")}
+function frame(t,n){panel.textContent="";panel.appendChild(h("h2",t));n.forEach(x=>panel.appendChild(x));panel.scrollTop=0}
+function pick(i){if(mode!==1)return;sel=i;seen[i]=seen[i]||{};seen[i][cur]=1;store.set("seen",seen);const d=P.map((_,j)=>j).filter(j=>seen[j]&&seen[j].k&&seen[j].m);store.set("selesai",d);jelajah()}
+P.forEach((_,i)=>$("p"+i).addEventListener("click",()=>pick(i)));
+function jelajah(){all(true,sel);roof();
+  const info=h("div","","box",[h("p",sel<0?"Seret layar untuk memutar joglo, ketuk sebuah saka guru (tiang), lalu ganti kurikulum untuk membandingkan. Buka kedua tampilan pada tiap tiang agar saka dinyatakan selesai.":P[sel].n+" · "+(cur==="k"?"K13":"Merdeka")+": "+P[sel][cur])]);
+  const seg=h("div","","row");[["k","Kurikulum 2013"],["m","Kurikulum Merdeka"]].forEach(([v,l])=>seg.appendChild(btn(l,cur===v?"act":"",()=>{cur=v;if(sel>=0)pick(sel);else jelajah()})));
+  const ch=h("div","","row");P.forEach((p,i)=>{const ok=seen[i]&&seen[i].k&&seen[i].m;ch.appendChild(btn((ok?"✅ ":"")+p.n,sel===i?"sel":"",()=>pick(i)))});
+  const n=P.filter((_,i)=>seen[i]&&seen[i].k&&seen[i].m).length;
+  const nx=btn("Lanjut: Rakit Joglo ("+n+"/4 saka selesai)","pri",()=>{mode=2;mulaiRakit()});nx.disabled=n<4;
+  frame("Jelajahi Pendopo",[info,seg,ch,nx,h("p","Joglo disangga empat saka guru; guru berperan sebagai pamong yang “tut wuri handayani”, dan gotong royong menjadi roh projek P5.","mu")])}
+function mulaiRakit(){q=shuf(P.map((p,i)=>({i,t:Math.random()<.5?"k":"m"})));qi=0;s2=0;all(false,-1);rakit()}
+function rakit(){
+  if(qi>=4){all(true,-1);store.set("rakit",s2);return frame("Joglo berdiri! ("+s2+"/4 tepat)",[h("p","Hasil tersimpan. Lanjutkan ke kasus AI di beranda."),h("a","Ke evaluasi kasus AI","btn pri"),btn("Jelajah lagi","",()=>{mode=1;jelajah()})].map(x=>{if(x.tagName==="A")x.href="index.html#evaluasi";return x}))}
+  const it=q[qi];all(false,-1);for(let k=0;k<qi;k++)paint(q[k].i,true,false);paint(it.i,false,true);
+  const fb=h("div"),row=h("div","","row");
+  const ans=t=>{[...row.children].forEach(b=>b.disabled=true);const ok=t===it.t;if(ok){s2++;paint(it.i,true,true)}
+    fb.append(h("p",ok?"Tepat! Tiang menyala.":"Kurang tepat. Itu ciri "+(it.t==="k"?"Kurikulum 2013":"Kurikulum Merdeka")+".",ok?"ok":"no"),btn("Berikutnya","pri",()=>{qi++;rakit()}))};
+  row.append(btn("Kurikulum 2013","",()=>ans("k")),btn("Kurikulum Merdeka","",()=>ans("m")));
+  frame("Rakit tiang "+(qi+1)+" dari 4",[h("p","Tiang yang berpendar sedang dirakit. Ini ciri kurikulum yang mana?","mu"),h("div","","box",[h("p",P[it.i].n.toUpperCase()+": "+P[it.i][it.t])]),row,fb])}
+let stream=null;$("ar").onclick=async()=>{const v=$("cam");if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;v.style.display="none";$("ar").textContent="📷 Latar kamera";return}
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});v.srcObject=stream;await v.play();v.style.display="block";$("ar").textContent="✖ Tutup kamera"}catch(e){alert("Kamera tidak dapat diakses. Izinkan kamera di browser.")}};
+jelajah();
+</script>
+</body>
+</html>

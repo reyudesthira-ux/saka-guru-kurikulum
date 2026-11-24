@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meja AR · Saka Guru Kurikulum</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe.min.js"></script>
+<style>body{overflow:hidden;background:linear-gradient(#c9b99a,var(--bg))}a-scene{position:fixed!important;inset:0;z-index:1}
+#cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:0}
+#top{position:fixed;top:0;left:0;right:0;z-index:5;padding:8px 12px;display:flex;justify-content:space-between}
+#panel{position:fixed;left:0;right:0;bottom:0;z-index:5;max-height:52vh;overflow-y:auto;background:var(--pn);border-top:2px solid var(--ln);border-radius:16px 16px 0 0;padding:12px 14px;max-width:760px;margin:auto}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}label{display:block;font-size:13px;color:var(--mu)}input[type=range]{padding:0}</style>
+</head>
+<body>
+<video id="cam" playsinline muted></video>
+<div id="top"><a class="btn" href="index.html">← Beranda</a><button id="camBtn">📷 Mulai kamera</button></div>
+<a-scene vr-mode-ui="enabled:false" loading-screen="enabled:false">
+<a-light type="ambient" intensity="0.85"></a-light><a-light type="directional" position="3 6 4" intensity="0.9"></a-light>
+<a-entity position="0 0 -4.5"><a-entity id="root" position="0 -0.4 0">
+<a-box width="1.6" height="0.1" depth="1.6" position="0 0.05 0" color="#7c5a3a"></a-box>
+<a-cylinder radius="0.12" height="1.8" position="0 0.95 0" color="#5b3f26"></a-cylinder>
+<a-cone radius-bottom="0.5" radius-top="0.05" height="0.45" segments-radial="4" position="0 2.1 0" rotation="0 45 0" color="#92400e"></a-cone>
+<a-box id="beam" width="2.6" height="0.1" depth="0.12" position="0 1.8 0" color="#92400e"></a-box>
+<a-entity id="pL"><a-cylinder radius="0.6" height="0.06" color="#0369a1"></a-cylinder><a-text value="K13" align="center" position="0 -0.25 0.1" width="3" color="#0369a1"></a-text></a-entity>
+<a-entity id="pR"><a-cylinder radius="0.6" height="0.06" color="#0f766e"></a-cylinder><a-text value="MERDEKA" align="center" position="0 -0.25 0.1" width="3" color="#0f766e"></a-text></a-entity>
+</a-entity></a-entity>
+<a-camera position="0 1.6 0" wasd-controls="enabled:false"></a-camera>
+</a-scene>
+<main id="panel"></main>
+<script src="kurikulum.js"></script>
+<script>
+const panel=$("panel"),root=$("root"),beam=$("beam"),pans={k:$("pL"),m:$("pR")};
+let n={k:0,m:0},th=0,tgt=0,cards=[],ci=0,err=[0,0,0,0],size=1,rot=0;
+(function loop(){th+=(tgt-th)*0.08;const r=th*Math.PI/180;
+  beam.setAttribute("rotation","0 0 "+th);
+  pans.k.setAttribute("position",(-1.3*Math.cos(r))+" "+(1.8-1.3*Math.sin(r)-0.55)+" 0");
+  pans.m.setAttribute("position",(1.3*Math.cos(r))+" "+(1.8+1.3*Math.sin(r)-0.55)+" 0");
+  requestAnimationFrame(loop)})();
+function setView(){root.setAttribute("scale",size+" "+size+" "+size);root.setAttribute("rotation","0 "+rot+" 0")}
+function addBlock(t,i){const b=document.createElement("a-box");const k=n[t]++;
+  b.setAttribute("width",.32);b.setAttribute("height",.28);b.setAttribute("depth",.32);b.setAttribute("color",P[i].c);
+  b.setAttribute("position",((k%3-1)*.36)+" "+(.17+Math.floor(k/3)*.3)+" 0");pans[t].appendChild(b);tgt=(n.k-n.m)*5}
+function frame(t,nodes){panel.textContent="";panel.appendChild(h("h2",t));nodes.forEach(x=>panel.appendChild(x));panel.scrollTop=0}
+function slider(lbl,min,max,val,step,fn){const i=h("input");i.type="range";i.min=min;i.max=max;i.step=step;i.value=val;i.oninput=()=>fn(+i.value);return h("div","","",[h("label",lbl),i])}
+function intro(){frame("Meja AR: Timbangan Kurikulum",[
+  h("p","Letakkan timbangan di mejamu: tekan “Mulai kamera”, arahkan HP ke meja, lalu atur ukuran dan putarannya. Gerakkan HP untuk melihat dari sisi lain."),
+  slider("Ukuran model",0.5,1.6,1,0.05,v=>{size=v;setView()}),slider("Putar model",0,360,0,5,v=>{rot=v;setView()}),
+  h("p","Misi: timbang 8 kartu ciri kurikulum. Putuskan tiap kartu masuk ke piringan K13 atau Merdeka. Blok berwarna sesuai saka guru (merah Tujuan, biru Struktur, hijau Proses, oranye Penilaian).","mu"),
+  btn("Mulai menimbang","pri",()=>{cards=shuf(P.flatMap((p,i)=>[{i,t:"k"},{i,t:"m"}]));ci=0;err=[0,0,0,0];n={k:0,m:0};[...document.querySelectorAll("#pL a-box,#pR a-box")].forEach(e=>e.remove());tgt=0;kartu()})])}
+function kartu(){
+  if(ci>=8)return akhir();
+  const c=cards[ci],fb=h("div"),row=h("div","","row");
+  const ans=t=>{[...row.children].forEach(b=>b.disabled=true);const ok=t===c.t;if(!ok)err[c.i]++;addBlock(c.t,c.i);
+    fb.append(h("p",ok?"Tepat! Blok masuk ke piringan "+(c.t==="k"?"K13":"Merdeka")+".":"Kurang tepat; kartu ini ciri "+(c.t==="k"?"Kurikulum 2013":"Kurikulum Merdeka")+", blok ditempatkan di sana.",ok?"ok":"no"),btn(ci<7?"Kartu berikutnya":"Selesai menimbang","pri",()=>{ci++;kartu()}))};
+  row.append(btn("⬅ Piringan K13","",()=>ans("k")),btn("Piringan Merdeka ➡","",()=>ans("m")));
+  frame("Kartu "+(ci+1)+" dari 8",[h("div","","box",[h("p",P[c.i].n.toUpperCase()+": "+P[c.i][c.t])]),row,fb])}
+function akhir(){tgt=0;const tot=8-err.reduce((a,b)=>a+b,0);store.set("ar",tot);
+  const mx=Math.max(...err),lemah=mx===0?Math.floor(Math.random()*4):err.indexOf(mx);
+  frame("Timbangan seimbang! ("+tot+"/8 tepat)",[h("p","Kedua piringan berisi 4 blok yang sama: kedua kurikulum sama-sama punya empat komponen, tetapi cara menopangnya berbeda."),
+   h("p",mx===0?"Semua tepat. AI akan memilih satu pilar untuk tantangan lanjutan.":"Pilar yang paling sering keliru: "+P[lemah].n+". AI akan menyusun misi khusus untuk pilar ini.","mu"),
+   btn("🧠 Terima misi dari AI","pri",()=>misi(lemah)),btn("Timbang ulang","",intro)])}
+async function misi(p){frame("Misi AI: "+P[p].n,[h("p","AI sedang menyusun misi…","mu")]);
+  const d=await buatKasus(p,shuf(CTX)[0],"menengah"),idx=shuf([0,1,2]),op=idx.map(i=>d.opsi[i]),b=idx.indexOf(d.benar),fb=h("div"),ls=h("div");
+  op.forEach((o,i)=>ls.appendChild(btn(o,"opt",()=>{[...ls.children].forEach(x=>x.disabled=true);const ok=i===b;
+    fb.append(h("p",ok?"Keputusan tepat!":"Belum tepat. Jawaban benar: "+op[b],ok?"ok":"no"),h("p",d.pen,"mu"),btn("Misi baru untuk pilar ini","",()=>misi(p)),h("a","Ke evaluasi di beranda","btn pri"))
+    fb.lastChild.href="index.html#evaluasi"})));
+  frame("Misi AI: "+P[p].n,[h("p",d.c+" · sumber: "+(d.sumber==="AI"?"dibuat AI":"bank kasus"),"mu"),h("div","","box",[h("p",d.kasus)]),h("p",d.tanya),ls,fb])}
+let stream=null;$("camBtn").onclick=async()=>{const v=$("cam");if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;v.style.display="none";$("camBtn").textContent="📷 Mulai kamera";return}
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});v.srcObject=stream;await v.play();v.style.display="block";$("camBtn").textContent="✖ Tutup kamera"}catch(e){alert("Kamera tidak dapat diakses. Izinkan kamera di browser, atau buka lewat HTTPS (github.io).")}};
+setView();intro();
+</script>
+</body>
+</html>

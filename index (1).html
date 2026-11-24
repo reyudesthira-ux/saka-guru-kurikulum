@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saka Guru Kurikulum: K13 dan Kurikulum Merdeka</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav><div class="wrap"><b>🏛️ Saka Guru Kurikulum</b><div><a href="#saka">4 Saka</a><a href="#evaluasi">Evaluasi</a><a href="#" id="navAI">⚙️ AI</a><a href="vr.html">Pendopo VR</a><a href="ar.html">Meja AR</a></div></div></nav>
+<header class="hero"><div class="wrap">
+<span class="badge">Perbandingan Kurikulum 2013 dan Kurikulum Merdeka</span>
+<h1>Dirikan joglo kurikulum, <br>pahami empat tiangnya</h1>
+<p class="lead">Seperti joglo yang disangga empat <i>saka guru</i>, kurikulum ditopang empat komponen: tujuan, struktur, proses, dan penilaian. Jelajahi pendopo 3D, rakit tiang-tiangnya, lalu uji keputusan Anda pada kasus yang dibuat AI. Estimasi 15–20 menit.</p>
+<p><a class="btn pri" href="vr.html">🥽 Masuk Pendopo VR</a> <a class="btn pri" href="ar.html">📱 Buka Meja AR</a> <a class="btn" href="#evaluasi">🧠 Langsung ke kasus AI</a></p>
+</div></header>
+<main class="wrap">
+<section id="saka"><h2>Empat Saka Guru</h2><p class="mu">Selesaikan tiap saka di Pendopo VR dengan membuka tampilan K13 dan Merdeka.</p>
+<div class="bar"><i id="bar"></i></div><p class="mu" id="persen"></p><div class="grid" id="grid"></div></section>
+<section id="evaluasi"><h2>Evaluasi: Kasus dari AI</h2>
+<p class="mu">Tiga kasus keputusan guru di berbagai daerah. Kasus dibuat AI bila kunci Gemini diisi (menu ⚙️ AI), dan memakai bank soal bawaan bila tidak.</p>
+<div id="ev"></div></section>
+</main>
+<footer><div class="wrap">Media pembelajaran interaktif AR/VR + GenAI · Mini Project · Konten: Kurikulum 2013 (KI–KD, 5M, KKM) dan Kurikulum Merdeka (CP, P5, diferensiasi, KKTP).</div></footer>
+<dialog id="dlg"><h3>Pengaturan AI</h3><p class="mu">Opsional. Tempel kunci API Gemini Anda agar kasus dibuat AI secara langsung. Kunci hanya disimpan di browser ini, tidak dikirim ke server lain selain Google. Tanpa kunci, aplikasi memakai bank kasus bawaan.</p>
+<input id="key" type="password" placeholder="Kunci API Gemini" autocomplete="off">
+<p><button class="pri" id="sv">Simpan</button> <button id="cl">Hapus</button> <button id="cx">Tutup</button></p></dialog>
+<script src="kurikulum.js"></script>
+<script>
+const done=store.get("selesai",[]);
+const grid=$("grid");
+P.forEach((p,i)=>{const ok=done.includes(i);const c=h("div","","card",[h("h3",(ok?"✅ ":"")+"Saka "+(i+1)+": "+p.n),h("p","K13: "+p.k.split(";")[0].split(",")[0],"mu"),h("p","Merdeka: "+p.m.split(";")[0].split(",")[0],"mu")]);c.style.setProperty("--c",p.c);grid.appendChild(c)});
+$("bar").style.width=done.length*25+"%";$("persen").textContent=done.length+" dari 4 saka selesai"+(store.get("rakit",null)!==null?" · Skor rakit: "+store.get("rakit")+"/4":"");
+const dlg=$("dlg");$("navAI").onclick=e=>{e.preventDefault();$("key").value="";dlg.showModal()};$("cx").onclick=()=>dlg.close();
+$("sv").onclick=()=>{const v=$("key").value.trim();if(v)store.set("gkey",v);dlg.close()};$("cl").onclick=()=>{store.set("gkey","");dlg.close()};
+let ri=0,sk=0,ord=[],ctx=[];
+function mulai(){ri=0;sk=0;ord=shuf([0,1,2,3]).slice(0,3);ctx=shuf(CTX);$("ev").textContent="";$("ev").appendChild(btn("Mulai evaluasi","pri",kasus))}
+async function kasus(){
+  const ev=$("ev");if(ri>=3){ev.textContent="";return ev.append(h("div","","box",[h("h3","Skor akhir: "+sk+" dari 3"),h("p",sk===3?"Luar biasa! Pemahaman Anda kuat.":"Jelajahi pendopo lagi, lalu coba kasus baru.")]),btn("Ulangi","pri",mulai))}
+  ev.textContent="";ev.appendChild(h("p","Menyusun kasus "+(ri+1)+" dari 3…","mu"));
+  const d=await buatKasus(ord[ri],ctx[ri],["dasar","menengah","menantang"][ri]);
+  const idx=shuf([0,1,2]),op=idx.map(i=>d.opsi[i]),benar=idx.indexOf(d.benar),fb=h("div"),ls=h("div");
+  op.forEach((o,i)=>ls.appendChild(btn(o,"opt",()=>{[...ls.children].forEach(b=>b.disabled=true);const ok=i===benar;if(ok)sk++;
+    fb.append(h("p",ok?"Keputusan tepat!":"Belum tepat. Jawaban benar: "+op[benar],ok?"ok":"no"),h("p",d.pen,"mu"),btn(ri<2?"Kasus berikutnya":"Lihat skor","pri",()=>{ri++;kasus()}))})));
+  ev.textContent="";ev.append(h("p","Kasus "+(ri+1)+" · Saka "+P[ord[ri]].n+" · "+d.c+" · sumber: "+(d.sumber==="AI"?"dibuat AI":"bank kasus"),"mu"),h("div","","box",[h("p",d.kasus)]),h("p",d.tanya),ls,fb)}
+mulai();
+</script>
+</body>
+</html>
